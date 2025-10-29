@@ -25,8 +25,8 @@ const BetButton: React.FC<ButtonProps> = ({
   return (
     <button
       onClick={() => clickFunction(betAmt)}
-      className={`doodleFont h-[100px] w-[100px] border-2 border-black rounded-2xl transition-all ${
-        disabled ? "opacity-35" : ""
+      className={`doodleFont h-[100px] w-[100px]  ${
+        disabled ? "opacity-30" : "cursor-pointer"
       }`}
       disabled={disabled}
     >

@@ -3,7 +3,6 @@ import { useState, Fragment, useEffect, useRef } from "react";
 import backgroundImg from "./assets/background.jpg";
 import { betAmounts, possDenom } from "./data/betAmounts";
 import BetButton from "./components/BetButton";
-import { motion } from "motion/react";
 
 import rough from "roughjs";
 import Reel from "./components/Reel.tsx";
@@ -23,7 +22,7 @@ function App() {
 
   const roughNess = 4;
 
-  const [filledUp, isFilledUp] = useState(false);
+  const [filledUp, isFilledUp] = useState(false); //possibly not needed?
   const [reelsData, setReelsData] = useState<SlotSymbol[][]>(
     Array.from({ length: 5 }, () => [] as SlotSymbol[])
   );
@@ -61,7 +60,7 @@ function App() {
     console.log("start");
     isFilledUp(false);
     setReelsData(() => Array.from({ length: 5 }, () => [] as SlotSymbol[]));
-    setIsSpinning(() => true);
+    setIsSpinning(true);
     setBetButtonDisabled(true);
     setDenomButtonDisabled(true);
 
@@ -79,9 +78,13 @@ function App() {
     });
     console.log("finish");
 
+    const checkWin = async () => {};
+
+    await checkWin();
+
     setIsSpinning(false);
     setBetButtonDisabled(false);
-    setDenomButtonDisabled(true);
+    setDenomButtonDisabled(false);
   };
 
   useEffect(() => {
@@ -244,7 +247,7 @@ function App() {
           </div>
           <div
             id="money-and-bet"
-            className="w-full h-[10%] text-2xl flex justify-evenly doodleFont"
+            className="w-full h-[10%] text-2xl flex justify-evenly doodleFont border-t-2"
           >
             <div id="credit" className="flex justify-between w-1/3 px-3">
               <p>CREDIT:</p>
@@ -263,7 +266,7 @@ function App() {
 
         <div
           id="play-buttons"
-          className={`w-4/5 h-1/4 grow-2 flex justify-evenly px-10 items-center relative z-50${
+          className={`w-4/5 h-1/4 grow-2 flex justify-evenly px-10 items-center relative z-50 ${
             debug ? "border-2 border-black" : ""
           }`}
         >

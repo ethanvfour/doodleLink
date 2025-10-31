@@ -1,6 +1,7 @@
 export interface SlotSymbol {
   name: string;
   photo: string; //the photo path yk
+  orb ?: string;
 }
 
 const lowPaying: string[] = ["J", "Q", "K", "A"];

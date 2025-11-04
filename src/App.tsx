@@ -1,5 +1,5 @@
 import "./index.css";
-import { useState, Fragment, useEffect, useRef } from "react";
+import { useState, Fragment, useEffect, useRef, useCallback } from "react";
 import backgroundImg from "./assets/background.jpg";
 import { betAmounts, possDenom } from "./data/betAmounts";
 import BetButton from "./components/BetButton";
@@ -7,11 +7,12 @@ import BetButton from "./components/BetButton";
 import rough from "roughjs";
 import Reel from "./components/Reel.tsx";
 import type { SlotSymbol } from "./data/symbols.tsx";
+import { payLines, paytable } from "./data/reels.ts";
 /* ROUGH JS */
 
 function App() {
   const debug = false;
-  const [lineCount, setLineCount] = useState(20);
+  const [lineCount, setLineCount] = useState(betAmounts[0].lines);
   const [currBetAmt, setBetAmt] = useState(betAmounts[0]);
   const [denom, setDenom] = useState(possDenom[0]),
     [denomChanging, setDenomChange] = useState<boolean>(true);
@@ -19,6 +20,10 @@ function App() {
   const [denomButtonDisabled, setDenomButtonDisabled] = useState<boolean>(true);
   const [credit, setCredit] = useState(1000); // dollars as float
   //cents
+
+  const [orbBonus, setOrbBonus] = useState<boolean>(false);
+
+  const [freeBonus, setFreeBonus] = useState<boolean>(false);
 
   const roughNess = 4;
 
@@ -31,7 +36,7 @@ function App() {
     reelsDataRef.current = reelsData;
   }, [reelsData]);
 
-  const handleReelData = (index: number, symbols: SlotSymbol[]): void => {
+  const handleReelData = useCallback((index: number, symbols: SlotSymbol[]): void => {
     setReelsData((prev) => {
       const newData = [...prev];
       newData[index] = [...symbols];
@@ -39,7 +44,7 @@ function App() {
       if (allDone) isFilledUp(true);
       return newData;
     });
-  };
+  }, []);
 
   const [isSpinning, setIsSpinning] = useState(false);
 
@@ -56,32 +61,81 @@ function App() {
     setDenomChange(false);
   };
 
-  const handleSpin = async (bAmt: number) => {
+  const handleSpin = async (bet:{ amount: number; lines: number }) => {
     console.log("start");
     isFilledUp(false);
     setReelsData(() => Array.from({ length: 5 }, () => [] as SlotSymbol[]));
     setIsSpinning(true);
     setBetButtonDisabled(true);
     setDenomButtonDisabled(true);
+    setLineCount(() => bet.lines);
 
     await new Promise((resolve) => {
       const interval = setInterval(() => {
         const latest = reelsDataRef.current;
-        console.log(latest);
+        console.log("Current reel data:", latest.map(reel => reel.length));
         const allDone = latest.every((i) => i.length === 3);
         if (allDone) {
-          console.log("WOOHOOO");
+          console.log("WOOHOOO - All reels filled:", latest);
           clearInterval(interval);
           resolve("done");
         }
       }, 50);
     });
+    
+    // Wait for React to finish rendering the new reel symbols
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     console.log("finish");
+    const winningPaylines: number[] = [];
 
-    const checkWin = async () => {};
+    const checkWin = async (): Promise<number> => {
+      let basePay: number = 0;
+      payLines.slice(0, bet.lines).forEach((pl, i) => {
+        console.log("index: ", i);
+        console.log(reelsDataRef.current[0][pl[0]].name);
+        let symbol = reelsDataRef.current[0][pl[0]].name;
+        let wild = symbol === "wild";
 
-    await checkWin();
+        let len = 1;
 
+        if (wild) symbol = "";
+
+        for (; len < 5 && symbol !== "orb" && symbol !== "free"; len++) {
+          const currSymbol = reelsDataRef.current[len][pl[len]].name;
+          if (currSymbol === "wild") continue;
+          else if (wild) {
+            wild = false;
+            symbol = currSymbol;
+            continue;
+          } else if (currSymbol === symbol) continue;
+          else {
+            break;
+          }
+        }
+        
+        if(wild)
+        {
+          console.log(pl, "HI")
+          winningPaylines.push(i);
+          basePay += paytable["wild"][5];
+        }
+        else if(paytable[symbol] && paytable[symbol][len])
+        {
+          console.log(pl, "HI")
+          winningPaylines.push(i);
+          basePay += paytable[symbol][len];
+        }
+
+      });
+      
+      basePay = basePay * (denom / 100);
+      console.log(basePay)
+      return basePay;
+    };
+
+    const basePay = await checkWin();
+    console.log(winningPaylines)
     setIsSpinning(false);
     setBetButtonDisabled(false);
     setDenomButtonDisabled(false);
@@ -271,7 +325,7 @@ function App() {
           }`}
         >
           {betAmounts.map((amt) => (
-            <Fragment key={amt}>
+            <Fragment key={amt.amount}>
               <BetButton
                 betAmt={amt}
                 clickFunction={handleSpin}

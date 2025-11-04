@@ -35,6 +35,18 @@ const payLines: number[][] = [
   [2, 0, 0, 0, 2],
 ];
 
+const paytable: Record<string, Record<number, number>> = {
+  // symbol: { count: multiplier }
+  "J": { 3: 5, 4: 25, 5: 100 },
+  "Q": { 3: 5, 4: 25, 5: 125 },
+  "K": { 3: 10, 4: 50, 5: 150 },
+  "A": { 3: 15, 4: 75, 5: 200 },
+  "doodleCar": { 2: 2, 3: 25, 4: 100, 5: 500 },
+  "doodlePlane": { 2: 5, 3: 50, 4: 200, 5: 1000 },
+  "doodleCoolS": { 2: 10, 3: 100, 4: 500, 5: 2000 },
+  "wild": { 5: 5000 },
+};
+
 // Orb values with weighted probabilities (Dragon Link style)
 const orbValues = [
   { value: "50", weight: 0.3 }, // 30% - Most common
@@ -126,4 +138,4 @@ const getReels = (): SlotSymbol[][] => {
   return reels;
 };
 
-export { getReels, payLines, orbValues, getOrbValue };
+export { getReels, payLines, orbValues, getOrbValue, paytable };

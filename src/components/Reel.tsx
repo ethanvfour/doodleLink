@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useState, useRef } from "react";
 import type { SlotSymbol } from "../data/symbols";
 import { getOrbValue, getReels } from "../data/reels";
 // import { motion } from "motion/react";
@@ -17,19 +17,20 @@ const Reel: React.FC<ReelProps> = ({ reelIndex, spinHappening, sendData }) => {
   }, [reelIndex]);
 
   const [start, setStart] = useState<boolean>(true);
-  useEffect(() => { //only happens at the start
+  useEffect(() => {
+    //only happens at the start
     if (!start || reelData.length === 0) return;
     setStart(false);
     const pickThree = (): number => Math.floor(Math.random() * reelData.length);
     const tempReel: SlotSymbol[] = [];
     for (let i = pickThree(), times = 0; times < 3; times++) {
       const symbol = { ...reelData[i] };
-      
+
       // Assign orb value once when symbol is selected (not on every render)
       if (symbol.name === "orb") {
         symbol.orb = getOrbValue();
       }
-      
+
       tempReel.push(symbol);
       i = (i + 1) % reelData.length;
     }
@@ -37,40 +38,61 @@ const Reel: React.FC<ReelProps> = ({ reelIndex, spinHappening, sendData }) => {
   }, [start, reelData]);
 
   const [currReel, setCurrReel] = useState<SlotSymbol[]>([]);
+  const prevSpinningRef = useRef(false);
 
   useEffect(() => {
-    //shouldnt happen?
     if (!spinHappening || reelData.length === 0) return;
-    /*
-      code
-      */
-    const pickThree = (): number => Math.floor(Math.random() * reelData.length);
-    const tempReel: SlotSymbol[] = [];
-    for (let i = pickThree(), times = 0; times < 3; times++) {
-      const symbol = { ...reelData[i] };
+   
+    // Only generate new symbols when spinHappening transitions from false to true
+    if (!prevSpinningRef.current && spinHappening) {
+      prevSpinningRef.current = true;
       
-      // Assign orb value once when symbol is selected (not on every render)
-      if (symbol.name === "orb") {
-        symbol.orb = getOrbValue();
-      }
-      
-      tempReel.push(symbol);
-      i = (i + 1) % reelData.length;
-    }
-    setCurrReel(tempReel);
+      const pickThree = (): number => Math.floor(Math.random() * reelData.length);
+      const tempReel: SlotSymbol[] = [];
+      for (let i = pickThree(), times = 0; times < 3; times++) {
+        const symbol = { ...reelData[i] };
 
-    sendData(reelIndex, tempReel);
+        // Assign orb value once when symbol is selected (not on every render)
+        if (symbol.name === "orb") {
+          symbol.orb = getOrbValue();
+        }
+
+        tempReel.push(symbol);
+        i = (i + 1) % reelData.length;
+      }
+      setCurrReel(tempReel);
+      sendData(reelIndex, tempReel);
+    }
   }, [spinHappening, reelData, reelIndex, sendData]);
+
+  // Reset the flag when spin ends
+  useEffect(() => {
+    if (!spinHappening) {
+      prevSpinningRef.current = false;
+    }
+  }, [spinHappening]);
 
   return (
     <div className="w-[20%] h-full border-r-2 border-l-2">
       {currReel.map((curr, i) => (
         <Fragment key={i}>
           <div className="h-1/3 w-full doodleFont text-9xl flex justify-center items-center border-2 bg-white overflow-hidden relative">
-            {curr.photo === "" ? curr.name : (<>
-            <img className="max-w-full max-h-full object-contain" src={curr.photo} alt={curr.name} />
-             {curr.orb && <p className="text-6xl doodleFont absolute left-1/2 top-1/2 -translate-y-1/2 -translate-x-1/2">{curr.orb}</p>}
-            </>)}
+            {curr.photo === "" ? (
+              curr.name
+            ) : (
+              <>
+                <img
+                  className="max-w-full max-h-full object-contain"
+                  src={curr.photo}
+                  alt={curr.name}
+                />
+                {curr.orb && (
+                  <p className="text-6xl doodleFont absolute left-1/2 top-1/2 -translate-y-1/2 -translate-x-1/2">
+                    {curr.orb}
+                  </p>
+                )}
+              </>
+            )}
           </div>
         </Fragment>
       ))}

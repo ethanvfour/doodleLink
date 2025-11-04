@@ -4,8 +4,8 @@ import "../index.css";
  * Props for the BetButton component
  */
 interface ButtonProps {
-  betAmt: number; // The bet amount to display and pass to click handler
-  clickFunction: (betAmt: number) => void; // Function called when button is clicked, receives bet amount
+  betAmt: { amount: number; lines: number }; // The bet amount to display and pass to click handler
+  clickFunction: (betAmt: { amount: number; lines: number }) => void; // Function called when button is clicked, receives bet amount
   disabled: boolean;
 }
 
@@ -30,7 +30,7 @@ const BetButton: React.FC<ButtonProps> = ({
       }`}
       disabled={disabled}
     >
-      <h4>{betAmt}</h4>
+      <h4>{betAmt.amount}</h4>
       <p>CREDITS</p>
     </button>
   );

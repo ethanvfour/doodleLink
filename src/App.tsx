@@ -13,12 +13,12 @@ import { payLines, paytable } from "./data/reels.ts";
 function App() {
   const debug = false;
   const [lineCount, setLineCount] = useState(betAmounts[0].lines);
-  const [currBetAmt, setBetAmt] = useState(betAmounts[0]);
+  // const [currBetAmt, setBetAmt] = useState(betAmounts[0]);
   const [denom, setDenom] = useState(possDenom[0]),
     [denomChanging, setDenomChange] = useState<boolean>(true);
   const [betButtonsDisabled, setBetButtonDisabled] = useState<boolean>(true);
   const [denomButtonDisabled, setDenomButtonDisabled] = useState<boolean>(true);
-  const [credit, setCredit] = useState(1000); // dollars as float
+  const [credit, setCredit] = useState<number>(1000.00); // dollars as float
   //cents
 
   const [orbBonus, setOrbBonus] = useState<boolean>(false);
@@ -61,7 +61,9 @@ function App() {
     setDenomChange(false);
   };
 
-  const handleSpin = async (bet:{ amount: number; lines: number }) => {
+  const lastBetIndex = useRef<number>(0);
+
+  const handleSpin = useCallback(async (bet:{ amount: number; lines: number }) => {
     console.log("start");
     isFilledUp(false);
     setReelsData(() => Array.from({ length: 5 }, () => [] as SlotSymbol[]));
@@ -69,6 +71,10 @@ function App() {
     setBetButtonDisabled(true);
     setDenomButtonDisabled(true);
     setLineCount(() => bet.lines);
+    setCredit(prev => prev - (bet.amount * (denom/100)))
+
+    lastBetIndex.current = betAmounts.findIndex(curr => curr.amount === bet.amount);
+
 
     await new Promise((resolve) => {
       const interval = setInterval(() => {
@@ -135,11 +141,36 @@ function App() {
     };
 
     const basePay = await checkWin();
+
+    if(basePay > 0)
+      setCredit(p => p + basePay)
+
+
     console.log(winningPaylines)
     setIsSpinning(false);
     setBetButtonDisabled(false);
     setDenomButtonDisabled(false);
-  };
+  }, [denom]);
+
+  useEffect(() => 
+  {
+    function handleSpaceSpin(event: KeyboardEvent)
+    {
+      console.log("Space pressed, buttons disabled:", betButtonsDisabled);
+      if(event.key === " " && !betButtonsDisabled)
+      {
+        event.preventDefault();
+        handleSpin(betAmounts[lastBetIndex.current]);
+      }
+    }
+
+    window.addEventListener("keydown", handleSpaceSpin);
+
+    return () =>
+    {
+      window.removeEventListener("keydown", handleSpaceSpin);
+    }
+  }, [betButtonsDisabled, handleSpin]);
 
   useEffect(() => {
     //drawing the svgs

@@ -5,7 +5,7 @@ import { betAmounts, possDenom } from "./data/betAmounts";
 import BetButton from "./components/BetButton";
 
 import rough from "roughjs";
-import Reel from "./components/Reel.tsx";
+import Reel from "./components/ReelMotion.tsx";
 import type { SlotSymbol } from "./data/symbols.tsx";
 import { payLines, paytable } from "./data/reels.ts";
 /* ROUGH JS */
@@ -13,7 +13,9 @@ import { payLines, paytable } from "./data/reels.ts";
 function App() {
   const debug = false;
   const [lineCount, setLineCount] = useState(betAmounts[0].lines);
-  // const [currBetAmt, setBetAmt] = useState(betAmounts[0]);
+  const [currBetAmt, setBetAmt] = useState(betAmounts[0].amount);
+  const [winAmt, setWinAmt] = useState(0);
+  const [displayWin, setDisplayWin] = useState(0);
   const [denom, setDenom] = useState(possDenom[0]),
     [denomChanging, setDenomChange] = useState<boolean>(true);
   const [betButtonsDisabled, setBetButtonDisabled] = useState<boolean>(true);
@@ -72,6 +74,7 @@ function App() {
     setDenomButtonDisabled(true);
     setLineCount(() => bet.lines);
     setCredit(prev => prev - (bet.amount * (denom/100)))
+    setBetAmt(bet.amount * (denom/100))
 
     lastBetIndex.current = betAmounts.findIndex(curr => curr.amount === bet.amount);
 
@@ -146,10 +149,13 @@ function App() {
       setCredit(p => p + basePay)
 
 
-    console.log(winningPaylines)
+    console.log(winningPaylines);
+    
+    
     setIsSpinning(false);
     setBetButtonDisabled(false);
     setDenomButtonDisabled(false);
+    setWinAmt(basePay);
   }, [denom]);
 
   useEffect(() => 
@@ -171,6 +177,37 @@ function App() {
       window.removeEventListener("keydown", handleSpaceSpin);
     }
   }, [betButtonsDisabled, handleSpin]);
+
+  // Counting animation effect for winnings
+  useEffect(() => {
+
+    if (winAmt === 0) {
+      setDisplayWin(0);
+      return;
+    }
+
+    let startTime: number | null = null;
+    const duration = 1500; // 1.5 seconds to count up
+    
+    const animate = (currentTime: number) => {
+      if (!startTime) startTime = currentTime;
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Ease out function for smoother counting
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      const currentValue = winAmt * easeOut;
+      
+      setDisplayWin(currentValue);
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+    
+    requestAnimationFrame(animate);
+
+  }, [winAmt]);
 
   useEffect(() => {
     //drawing the svgs
@@ -340,11 +377,11 @@ function App() {
             </div>
             <div id="bet" className="flex justify-between w-1/3 px-3">
               <p>BET:</p>
-              <p>{"$" + `${credit.toFixed(2)}`}</p>
+              <p>{"$" + `${currBetAmt.toFixed(2)}`}</p>
             </div>
             <div id="win" className="flex justify-between w-1/3 px-3">
               <p>WIN:</p>
-              <p>{"$" + `${credit.toFixed(2)}`}</p>
+              <p>{"$" + `${displayWin.toFixed(2)}`}</p>
             </div>
           </div>
         </div>
